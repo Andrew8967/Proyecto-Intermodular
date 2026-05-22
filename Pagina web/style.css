@@ -1,0 +1,375 @@
+/* variables de color y fuente que uso en toda la pagina */
+:root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --border: #1e2330;
+    --accent: #00e5a0;
+    --accent2: #0066ff;
+    --warn: #ff6b35;
+    --text: #c8d0e0;
+    --text-dim: #5a6480;
+    --text-bright: #eef2ff;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Space Grotesk', sans-serif;
+}
+
+/* quito los margenes que pone el navegador por defecto */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* fondo oscuro para toda la pagina */
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* efecto de lineas horizontales tipo monitor antiguo */
+.scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 229, 160, 0.015) 2px,
+        rgba(0, 229, 160, 0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* ruido de fondo para que no se vea tan plano */
+.noise {
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none;
+    z-index: 99;
+}
+
+/* barra de arriba con el nombre y el uptime */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0, 229, 160, 0.04) 0%, transparent 100%);
+}
+
+/* logo con icono y nombre juntos */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* el hexagono que parpadea */
+.logo-icon {
+    font-size: 2.5rem;
+    color: var(--accent);
+    filter: drop-shadow(0 0 12px var(--accent));
+    animation: pulse 3s ease-in-out infinite;
+}
+
+/* animacion del brillo del icono */
+@keyframes pulse {
+    0%, 100% { filter: drop-shadow(0 0 8px var(--accent)); }
+    50% { filter: drop-shadow(0 0 20px var(--accent)); }
+}
+
+header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: 0.05em;
+}
+
+/* texto pequeño debajo del titulo */
+.subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+}
+
+.header-status {
+    text-align: right;
+}
+
+.uptime-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.3rem;
+}
+
+/* numero del contador en verde */
+.uptime-value {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+}
+
+/* contenido principal centrado con espacio entre secciones */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+/* titulo de cada seccion en letras pequeñas */
+.section-title {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+}
+
+/* cuadricula para los datos del hardware */
+.hw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.hw-item {
+    background: var(--surface);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+/* etiqueta pequeña encima del valor */
+.hw-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.hw-value {
+    font-size: 0.9rem;
+    color: var(--text-bright);
+    font-weight: 400;
+}
+
+/* cuadricula de las tarjetas de servicios */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.2rem;
+}
+
+/* cada tarjeta de servicio */
+.service-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+/* linea verde que aparece arriba al pasar el raton */
+.service-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* efecto al pasar el raton por encima */
+.service-card:hover {
+    border-color: rgba(0, 229, 160, 0.3);
+    box-shadow: 0 0 30px rgba(0, 229, 160, 0.05);
+}
+
+.service-card:hover::before {
+    opacity: 1;
+}
+
+/* parte de arriba de la tarjeta con icono y nombre */
+.service-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+}
+
+.service-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.service-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-bright);
+}
+
+.service-tech {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+}
+
+/* etiqueta verde de estado que va a la derecha */
+.status-badge {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 3px;
+    background: rgba(0, 229, 160, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0, 229, 160, 0.3);
+}
+
+/* filas de datos dentro de la tarjeta */
+.service-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.detail span {
+    color: var(--text-dim);
+}
+
+/* cajita gris para los valores como puertos o modos */
+.detail code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+}
+
+/* parte de abajo con la direccion para conectarse */
+.connect-info {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.connect-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+/* la ip o url en verde para que resalte */
+.connect-addr {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+    background: rgba(0, 229, 160, 0.06);
+    padding: 0.35rem 0.7rem;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 229, 160, 0.15);
+    display: block;
+    word-break: break-all;
+}
+
+/* cuadricula para los datos de red */
+.network-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.net-item {
+    background: var(--surface);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.net-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+/* los valores de red en azul para diferenciarlos */
+.net-item code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent2);
+}
+
+/* pie de pagina centrado con el nombre y el curso */
+.project-footer {
+    text-align: center;
+    padding: 1.5rem 0 0.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+}
+
+/* en movil lo pongo todo en columna para que quepa */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    main {
+        padding: 1.5rem;
+    }
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+}

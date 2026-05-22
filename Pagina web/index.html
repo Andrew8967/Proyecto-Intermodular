@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- titulo de la pagina que se ve en la pestaña del navegador -->
+    <title>RaspServer — Panel de Control</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- fuentes de google para que se vea mejor -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- estas dos capas son efectos visuales de fondo -->
+    <div class="scanlines"></div>
+    <div class="noise"></div>
+
+    <!-- cabecera con el nombre del servidor y el tiempo que lleva encendido -->
+    <header>
+        <div class="logo">
+            <span class="logo-icon">⬡</span>
+            <div>
+                <h1>RaspServer</h1>
+                <p class="subtitle">Servidor Personal — Raspberry Pi 5</p>
+            </div>
+        </div>
+        <!-- aqui se muestra el tiempo que lleva corriendo la pagina -->
+        <div class="header-status">
+            <span class="uptime-label">UPTIME</span>
+            <span id="uptime" class="uptime-value">00:00:00</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- seccion con los datos del hardware del servidor -->
+        <section class="hardware-info">
+            <h2 class="section-title">Hardware</h2>
+            <div class="hw-grid">
+                <div class="hw-item">
+                    <span class="hw-label">Placa</span>
+                    <span class="hw-value">Raspberry Pi 5 — 8GB</span>
+                </div>
+                <div class="hw-item">
+                    <span class="hw-label">CPU</span>
+                    <span class="hw-value">Cortex-A76 — 4 núcleos — 2.4GHz</span>
+                </div>
+                <div class="hw-item">
+                    <span class="hw-label">Almacenamiento</span>
+                    <span class="hw-value">NVMe SSD 512GB</span>
+                </div>
+                <div class="hw-item">
+                    <span class="hw-label">SO</span>
+                    <span class="hw-value">Raspberry Pi OS Lite 64-bit</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- tarjetas de cada servicio que corre en el servidor -->
+        <section class="services">
+            <h2 class="section-title">Servicios Activos</h2>
+            <div class="services-grid">
+
+                <!-- tarjeta del servidor de minecraft -->
+                <div class="service-card" data-service="minecraft">
+                    <div class="service-header">
+                        <span class="service-icon"></span>
+                        <div>
+                            <h3>Minecraft</h3>
+                            <span class="service-tech">PaperMC 1.21</span>
+                        </div>
+                        <span class="status-badge" id="mc-status">ACTIVO</span>
+                    </div>
+                    <div class="service-details">
+                        <div class="detail"><span>Puerto</span><code>25565</code></div>
+                        <div class="detail"><span>Jugadores</span><code>0 / 5</code></div>
+                        <div class="detail"><span>Modo</span><code>Survival</code></div>
+                    </div>
+                    <!-- direccion para conectarse desde el juego -->
+                    <div class="connect-info">
+                        <span class="connect-label">Conectar en Minecraft:</span>
+                        <code class="connect-addr">192.168.1.100:25565</code>
+                    </div>
+                </div>
+
+                <!-- tarjeta del servidor web -->
+                <div class="service-card" data-service="web">
+                    <div class="service-header">
+                        <span class="service-icon"></span>
+                        <div>
+                            <h3>Servidor Web</h3>
+                            <span class="service-tech">Apache2</span>
+                        </div>
+                        <span class="status-badge" id="web-status">ACTIVO</span>
+                    </div>
+                    <div class="service-details">
+                        <div class="detail"><span>Puerto</span><code>80</code></div>
+                        <div class="detail"><span>Stack</span><code>HTML / CSS / JS</code></div>
+                        <div class="detail"><span>Estado</span><code>Sirviendo</code></div>
+                    </div>
+                    <div class="connect-info">
+                        <span class="connect-label">Acceder:</span>
+                        <code class="connect-addr">http://192.168.1.100</code>
+                    </div>
+                </div>
+
+                <!-- tarjeta del chatbot de inteligencia artificial -->
+                <div class="service-card" data-service="chatbot">
+                    <div class="service-header">
+                        <span class="service-icon"></span>
+                        <div>
+                            <h3>Chatbot IA Local</h3>
+                            <span class="service-tech">Ollama + Open WebUI</span>
+                        </div>
+                        <span class="status-badge" id="ai-status">ACTIVO</span>
+                    </div>
+                    <div class="service-details">
+                        <div class="detail"><span>Puerto</span><code>3000</code></div>
+                        <div class="detail"><span>Modelo</span><code>phi3:mini</code></div>
+                        <div class="detail"><span>Modo</span><code>100% Local</code></div>
+                    </div>
+                    <div class="connect-info">
+                        <span class="connect-label">Acceder al chat:</span>
+                        <code class="connect-addr">http://192.168.1.100:3000</code>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- informacion de la red local donde esta el servidor -->
+        <section class="network-info">
+            <h2 class="section-title">Red</h2>
+            <div class="network-grid">
+                <div class="net-item">
+                    <span class="net-label">IP del Servidor</span>
+                    <code>192.168.1.100</code>
+                </div>
+                <div class="net-item">
+                    <span class="net-label">Subred</span>
+                    <code>192.168.1.0 / 24</code>
+                </div>
+                <div class="net-item">
+                    <span class="net-label">Gateway</span>
+                    <code>192.168.1.1</code>
+                </div>
+                <div class="net-item">
+                    <span class="net-label">Firewall</span>
+                    <code>UFW — Activo</code>
+                </div>
+                <div class="net-item">
+                    <span class="net-label">Acceso remoto</span>
+                    <code>SSH puerto 22</code>
+                </div>
+                <div class="net-item">
+                    <span class="net-label">Acceso externo</span>
+                    <code>Solo LAN</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- pie de pagina con los datos del proyecto -->
+        <footer class="project-footer">
+            <p>Proyecto Intermodular — 1º SMR — I.E.S. Ribera del Tajo — 2025/2026</p>
+            <p>Andrés David Olarte Molina</p>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
