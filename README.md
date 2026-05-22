@@ -12,9 +12,9 @@ Diseño, simulación y documentación de un servidor personal multifunción basa
 
 | Servicio | Software | Puerto | Estado |
 |---|---|---|---|
-| Servidor Web | Apache2 + HTML/CSS/JS | 80 | ✅ Funcional en simulación |
-| Servidor Minecraft | PaperMC Java Edition | 25565 | 🔄 Documentado, pendiente de hardware |
-| Chatbot IA Local | Ollama + Open WebUI | 3000 | 🔄 Documentado, pendiente de hardware |
+| Servidor Web | Apache2 + HTML/CSS/JS | 80 | [✓] Funcional en simulación |
+| Servidor Minecraft | PaperMC Java Edition | 25565 | [en proceso] Documentado, pendiente de hardware |
+| Chatbot IA Local | Ollama + Open WebUI | 3000 | [en proceso] Documentado, pendiente de hardware |
 
 El desarrollo inicial se realiza sobre **QEMU + Debian 13** como entorno de simulación, equivalente funcional de Raspberry Pi OS al compartir el mismo kernel Linux y gestor de paquetes apt.
 
