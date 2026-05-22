@@ -64,31 +64,16 @@ El desarrollo inicial se realiza sobre **QEMU + Debian 13** como entorno de simu
 ## Estructura del repositorio
 
 ```
-proyecto-intermodular/
+
+├── Pagina web/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
 ├── README.md
-├── docs/
-│   ├── 01-introduccion.md
-│   ├── 02-hardware.md
-│   ├── 03-simulacion-qemu.md
-│   ├── 04-so-configuracion.md
-│   ├── 05-redes.md
-│   ├── 06-minecraft.md
-│   ├── 07-servidor-web.md
-│   ├── 08-chatbot-local.md
-│   └── 09-temporalizacion.md
-├── src/
-│   └── web/
-│       ├── index.html
-│       ├── style.css
-│       └── script.js
-├── config/
-│   ├── server.properties
-│   ├── ufw-rules.md
-│   └── apache-vhost.conf
-└── scripts/
-    ├── install-papermc.sh
-    ├── install-ollama.sh
-    └── start-services.sh
+├── documentacion-proyecto-intermodular.pdf
+├── install-ollama.sh
+├── install-papermc.sh
+└── start-services.sh
 ```
 
 ---
