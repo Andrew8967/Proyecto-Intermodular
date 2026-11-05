@@ -1,5 +1,7 @@
 # 02 · Arquitectura del servidor
 
+**Decisión:** el mini PC lleva **Proxmox VE 9** como sistema base (hipervisor). Cada servicio va en su propio contenedor LXC o máquina virtual. Minecraft y el panel van en el **CT 101 (Debian 13)**, y Alberto monta su homelab al lado, sin que un proyecto afecte al otro.
+
 ## Esquema general
 
 ```mermaid
@@ -8,74 +10,89 @@ flowchart LR
         R[Router<br/>192.168.1.1]
         J1[PC / portátil<br/>jugador]
         J2[Móvil<br/>ve el panel]
-        subgraph MINI["Mini PC x86 — 192.168.1.100"]
-            FW{{UFW<br/>firewall}}
-            MC[PaperMC<br/>:25565]
-            WEB[Apache2 + panel<br/>:80]
-            COL[panel-status.py]
-            SSH[OpenSSH<br/>:22]
-            BK[(Disco externo<br/>copias)]
+        subgraph MINI["Mini PC x86 — Proxmox VE 9 — 192.168.1.10:8006"]
+            subgraph CT101["CT 101 mc-server — Debian 13 — 192.168.1.100"]
+                FW{{UFW}}
+                MC[PaperMC<br/>:25565]
+                WEB[Apache2 + panel<br/>:80]
+                COL[panel-status.py]
+            end
+            ALB["CT/VM 2xx<br/>homelab de Alberto<br/>192.168.1.110+"]
+            EXT[(Disco externo 1-2 TB<br/>/mnt/externo)]
         end
     end
     J1 -- "Minecraft" --> FW --> MC
     J2 -- "http" --> FW --> WEB
-    COL -- "RCON 127.0.0.1:25575<br/>+ Server List Ping" --> MC
+    COL -- "RCON + Server List Ping" --> MC
     COL -- "status.json" --> WEB
-    MC -- "copia nocturna" --> BK
+    CT101 -- "copia diaria del mundo<br/>+ vzdump semanal" --> EXT
+    ALB --- EXT
     R --- J1 & J2 & MINI
 ```
 
-- **Desde Internet no se puede entrar.** El router no redirige ningún puerto. Si algún amigo quiere jugar desde fuera, se usa una VPN (Tailscale o WireGuard), nunca puertos abiertos ([05-seguridad.md](05-seguridad.md)).
-- **RCON** (la consola remota de Minecraft) solo la usa el recolector del panel desde el propio servidor. El firewall no la abre.
+## Organización dentro de Proxmox
+
+```
+Mini PC — Proxmox VE 9 (Debian 13 por debajo)       IP 192.168.1.10
+│   SSD 128 GB  → Proxmox (~15 GB) + local-lvm (discos de CT/VM)
+│   Disco externo 1-2 TB montado en /mnt/externo
+│       ├── ct101/     copias diarias del mundo (dentro del CT se ve como /mnt/externo)
+│       ├── proxmox/   copias completas vzdump (almacenamiento "externo")
+│       └── alberto/   datos del homelab de Alberto
+│
+├── CT 101  mc-server   Debian 13 · unprivileged · nesting    IP 192.168.1.100
+│           4 núcleos · 8 GB RAM · 40 GB · arranque automático
+│           PaperMC · Apache2 + panel · panel-status · fail2ban · UFW
+│
+└── CT/VM 2xx           homelab de Alberto                     IP 192.168.1.110+
+            resto de recursos
+```
+
+| Elemento | ID / IP | Responsable |
+|---|---|---|
+| Proxmox (web de gestión) | `https://192.168.1.10:8006` | Los dos |
+| CT 101 `mc-server` | `192.168.1.100` | Andrés |
+| CT/VM 200-299 | `192.168.1.110` – `192.168.1.149` | Alberto |
+
+> Conviene reservar esas IPs en el router, o sacarlas del rango DHCP, para que no las coja otro dispositivo.
+
+## ¿Por qué un contenedor LXC y no una máquina virtual?
+
+| | Contenedor LXC | Máquina virtual |
+|---|---|---|
+| Kernel | Comparte el del host | Tiene el suyo propio |
+| RAM | Solo usa la que necesita | Reserva la que le asignes |
+| Arranque | 2-3 segundos | 20-40 segundos |
+| Temperaturas en el panel | Puede leer los sensores del host | No las ve ("N/D") |
+| Snapshots y copias | Sí | Sí |
+| Cuándo usarla | Servicios Linux (como este) | Otro SO (Windows), Docker o aislamiento total |
+
+Minecraft, Apache y el panel son servicios Linux normales, así que un **CT sin privilegios** (*unprivileged*) es lo más eficiente y lo más seguro: el root del contenedor no es root en el host.
 
 ## Puertos
 
-| Puerto | Servicio | Desde dónde | Abierto en UFW |
+| Puerto | Dónde | Servicio | Desde |
 |---|---|---|---|
-| 22/tcp | SSH | LAN | Sí (solo LAN) |
-| 80/tcp | Panel web (Apache2) | LAN | Sí (solo LAN) |
-| 25565/tcp | Minecraft | LAN | Sí (solo LAN) |
-| 25575/tcp | RCON de Minecraft | Solo el propio servidor (el firewall lo bloquea desde fuera) | **No** |
-| 3000/tcp | Open WebUI (extra opcional) | LAN | Solo si se instala |
-| 8006/tcp | Interfaz web de Proxmox (opción A) | LAN | La gestiona Proxmox |
+| 8006/tcp | Proxmox `.10` | Web de gestión de Proxmox | LAN |
+| 22/tcp | Proxmox `.10` | SSH del host | LAN |
+| 22/tcp | CT 101 `.100` | SSH del contenedor | LAN (UFW) |
+| 80/tcp | CT 101 `.100` | Panel web | LAN (UFW) |
+| 25565/tcp | CT 101 `.100` | Minecraft | LAN (UFW) |
+| 25575/tcp | CT 101 `.100` | RCON (consola remota) | Solo el propio CT: UFW lo bloquea desde fuera |
 
-## Cómo se reparte el equipo con Alberto
+**Desde Internet no se puede entrar:** el router no redirige ningún puerto. Para jugar desde fuera se usa VPN ([05-seguridad.md](05-seguridad.md)).
 
-El mini PC lo compartimos dos personas. Hay dos formas de hacerlo:
-
-### Opción A (recomendada): Proxmox VE como base
-
-```
-Mini PC (Proxmox VE)
-├── CT 101  mc-server   (Debian 13, LXC)  ← Andrés: Minecraft + panel
-│           4 núcleos · 8 GB RAM · 40 GB disco
-├── VM/CT 2xx           ← Alberto: su homelab
-│           resto de recursos · disco externo
-└── Disco externo 1-2 TB → copias (vzdump) + datos de Alberto
-```
-
-**Ventajas:**
-- Si Alberto rompe algo, mi servidor sigue funcionando (y al revés).
-- **Snapshots:** antes de un cambio arriesgado se hace una instantánea y, si sale mal, se vuelve atrás en segundos.
-- Copias de seguridad completas de cada máquina con `vzdump`.
-- Es lo que se usa en homelabs reales y en muchas empresas. Encaja con SOR y SEIN.
-
-**A tener en cuenta:**
-- Usar un **contenedor LXC** (no una VM) para Minecraft. Comparte el kernel del host, gasta menos RAM y suele poder leer los **sensores de temperatura** del host (compruébalo con `ls /sys/class/hwmon` dentro del contenedor). Dentro de una VM no se ven las temperaturas reales y el panel mostrará "N/D".
-- 128 GB de SSD dan para Proxmox (~15 GB), mi contenedor (40 GB) y algo de Alberto. Lo grande va al disco externo.
-
-### Opción B (más simple): Debian 13 directamente
-
-Se instala Debian en el mini PC y cada uno usa su usuario (`EXTRA_SSH_USERS="alberto"` en `config.env`). Es más fácil y los scripts funcionan igual, pero no hay aislamiento: los dos compartimos el mismo sistema.
-
-**Los scripts de este repositorio funcionan en los dos casos.** Se ejecutan dentro del Debian 13, ya sea el contenedor de Proxmox o el sistema instalado directamente.
-
-## Reparto de recursos orientativo (16 GB de RAM)
+## Reparto de recursos (16 GB de RAM)
 
 | Uso | RAM |
 |---|---|
-| Proxmox / sistema base | ~1,5 GB |
-| Minecraft (Java `-Xmx4G`) + sistema del contenedor | ~5-6 GB |
-| Panel + Apache2 | < 100 MB |
-| Homelab de Alberto | ~6-8 GB |
+| Proxmox (host) | ~1,5-2 GB |
+| CT 101: Minecraft (Java `-Xmx4G`) + sistema | hasta 8 GB (normalmente usa ~5 GB) |
+| Homelab de Alberto | ~5-6 GB |
 | Margen | ~1 GB |
+
+Las cifras de CPU y RAM de cada CT se cambian en caliente desde la web de Proxmox (CT → Recursos). Ajustarlas es la parte de optimización que dejamos para más adelante.
+
+## Alternativa descartada: Debian directamente en el mini PC
+
+Sería más simple, pero los dos compartiríamos el mismo sistema: un fallo o un cambio de uno afectaría al otro, y no habría snapshots. Los scripts de `scripts/` siguen funcionando en un Debian 13 normal, y eso se aprovecha para **probarlos en una VM** antes de tener el hardware ([03-simulacion.md](03-simulacion.md)).

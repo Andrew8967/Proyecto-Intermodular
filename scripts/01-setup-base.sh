@@ -27,7 +27,11 @@ apt-get install -y \
     htop lm-sensors smartmontools rsync tar gzip
 
 info "Zona horaria: $TIMEZONE"
-timedatectl set-timezone "$TIMEZONE"
+timedatectl set-timezone "$TIMEZONE" 2>/dev/null || ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
+
+# ¿Estamos dentro de un contenedor LXC de Proxmox?
+EN_LXC=no
+[ "$(systemd-detect-virt -c 2>/dev/null || true)" = "lxc" ] && EN_LXC=si && info "Contenedor LXC detectado (Proxmox)."
 
 info "Activando actualizaciones de seguridad automáticas..."
 cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
@@ -72,19 +76,28 @@ systemctl restart ssh
 # Firewall UFW
 # ---------------------------------------------------------------------
 info "Configurando el firewall UFW (red permitida: $LAN_SUBNET)..."
-ufw --force reset >/dev/null
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow from "$LAN_SUBNET" to any port 22 proto tcp comment 'SSH (LAN)'
-ufw allow from "$LAN_SUBNET" to any port 80 proto tcp comment 'Panel web (LAN)'
-ufw allow from "$LAN_SUBNET" to any port 25565 proto tcp comment 'Minecraft (LAN)'
-# Solo en la simulación: con NAT de VirtualBox/QEMU el tráfico llega desde 10.0.2.2
-if [ "${SIMULACION_NAT:-no}" = "si" ]; then
-    aviso "Modo simulación: permito también la red NAT 10.0.2.0/24 (quítalo en el servidor real)."
-    ufw allow from 10.0.2.0/24 comment 'NAT de la VM (solo simulacion)'
+configurar_ufw() {
+    ufw --force reset >/dev/null
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow from "$LAN_SUBNET" to any port 22 proto tcp comment 'SSH (LAN)'
+    ufw allow from "$LAN_SUBNET" to any port 80 proto tcp comment 'Panel web (LAN)'
+    ufw allow from "$LAN_SUBNET" to any port 25565 proto tcp comment 'Minecraft (LAN)'
+    # Solo en la simulación: con NAT de VirtualBox/QEMU el tráfico llega desde 10.0.2.2
+    if [ "${SIMULACION_NAT:-no}" = "si" ]; then
+        aviso "Modo simulación: permito también la red NAT 10.0.2.0/24 (quítalo en el servidor real)."
+        ufw allow from 10.0.2.0/24 comment 'NAT de la VM (solo simulacion)'
+    fi
+    ufw --force enable
+}
+if configurar_ufw; then
+    ufw status verbose
+elif [ "$EN_LXC" = "si" ]; then
+    aviso "UFW no ha podido activarse dentro del contenedor."
+    aviso "Usa el firewall de Proxmox para el CT con las mismas reglas (docs/05-seguridad.md)."
+else
+    error "No se pudo activar UFW."
 fi
-ufw --force enable
-ufw status verbose
 
 # ---------------------------------------------------------------------
 # fail2ban
@@ -104,13 +117,20 @@ ignoreip = 127.0.0.1/8 ::1
 enabled = true
 EOF
 systemctl enable --now fail2ban
-systemctl restart fail2ban
+systemctl restart fail2ban || aviso "fail2ban no arrancó: journalctl -u fail2ban -n 20"
 
 # ---------------------------------------------------------------------
 # Sensores de temperatura (para el panel)
 # ---------------------------------------------------------------------
 info "Detectando sensores de temperatura..."
-sensors-detect --auto >/dev/null 2>&1 || aviso "sensors-detect no encontró sensores (normal en una VM)."
+if [ "$EN_LXC" = "si" ]; then
+    # en un CT los sensores los carga el host; solo comprobamos si se ven
+    ls /sys/class/hwmon/*/temp*_input >/dev/null 2>&1 \
+        && info "El CT puede leer los sensores del host." \
+        || aviso "El CT no ve sensores: el panel mostrará N/D en temperatura."
+else
+    sensors-detect --auto >/dev/null 2>&1 || aviso "sensors-detect no encontró sensores (normal en una VM)."
+fi
 
 echo
 info "Base lista. Resumen:"

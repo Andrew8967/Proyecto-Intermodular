@@ -10,7 +10,7 @@ La primera versión del proyecto ([documentación v1](archivo/documentacion-v1-r
 | **Más potencia por el mismo dinero** | Un i3 o un Intel N-series tiene mejor rendimiento por núcleo que el Cortex-A76 de la Pi. Para Minecraft eso es lo más importante, porque el servidor procesa el mundo principalmente en un solo hilo. |
 | **16 GB de RAM** | Hay sitio para Minecraft, el panel y el homelab de Alberto a la vez. La Pi 5 se queda en 8 GB como máximo. |
 | **Todo incluido** | La Pi necesita comprar aparte la fuente, la caja, la refrigeración y el adaptador NVMe. El mini PC trae todo. |
-| **Virtualización** | En x86 se puede instalar Proxmox VE y repartir el equipo con Alberto usando máquinas virtuales o contenedores ([02-arquitectura.md](02-arquitectura.md)). |
+| **Virtualización** | El mini PC lleva Proxmox VE: Minecraft va en un contenedor y el homelab de Alberto en otro, aislados ([02-arquitectura.md](02-arquitectura.md)). Proxmox oficial solo existe para x86_64: en la Raspberry habría que usar ports no oficiales. |
 
 > El argumento **no** es que Minecraft no funcione en ARM: PaperMC es Java y funciona en cualquier arquitectura. El argumento es la simulación fiel, la potencia y la flexibilidad.
 
@@ -54,7 +54,7 @@ Comparado con la v1 (Raspberry Pi 5 con accesorios: ~207-300 €), sale **más b
 1. Actualizar la BIOS **solo** si el fabricante publica una versión oficial.
 2. En la BIOS:
    - Activar **"Restore on AC Power Loss"** (o "Power On"): el servidor se enciende solo si se va la luz.
-   - Activar **VT-x / VT-d**, necesario si se instala Proxmox.
+   - Activar **VT-x / VT-d** (Proxmox lo necesita para las máquinas virtuales de Alberto).
    - Desactivar **Secure Boot** si da problemas al instalar Debian o Proxmox.
 3. Anotar el modelo exacto, los núcleos, la RAM y los discos (`lscpu`, `free -h`, `lsblk`) para la documentación.
 4. Medir el consumo con un enchufe medidor en reposo y con Minecraft en marcha (es un dato bueno para la memoria).

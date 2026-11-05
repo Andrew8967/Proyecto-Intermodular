@@ -219,7 +219,10 @@ function render(d) {
     setText('hw-ram', mem ? fmtBytes(mem.total) : null);
     setText('hw-os', h.os);
     setText('hw-kernel', h.kernel ? `${h.kernel} · ${h.arch}` : null);
-    setText('hw-virt', h.virtualization === 'none' ? 'Ninguna (hardware real)' : h.virtualization ? `Máquina virtual (${h.virtualization})` : null);
+    const virt = h.virtualization;
+    setText('hw-virt', virt === 'lxc' ? 'Contenedor LXC en Proxmox VE'
+        : virt === 'none' ? 'Ninguna (hardware real)'
+        : virt ? `Máquina virtual (${virt})` : null);
     const net = d.network || {};
     setText('net-ip', net.ip);
     setText('net-subnet', net.subnet);
@@ -287,13 +290,13 @@ function demoData() {
         generated_at: now,
         uptime: now - demo.start,
         host: { hostname: 'mc-server', os: 'Debian GNU/Linux 13 (trixie)', kernel: '6.12.0-amd64', arch: 'x86_64',
-                cpu_model: 'Intel(R) Core(TM) i3 (ejemplo)', cores: 4, virtualization: 'none' },
+                cpu_model: 'Intel(R) Core(TM) i3 (ejemplo)', cores: 4, virtualization: 'lxc' },
         network: { ip: '192.168.1.100', subnet: '192.168.1.0/24', gateway: '192.168.1.1' },
         cpu: { percent: cpu, load: [cpu / 40, cpu / 45, cpu / 50] },
         memory: { total: 16 * 1024 ** 3, used: 16 * 1024 ** 3 * ram / 100, percent: ram },
         temperatures: { cpu: wave(48, 61, 30) },
         disks: [
-            { name: 'SSD sistema', path: '/', mounted: true, total: 128e9, used: 31e9, percent: 24.2 },
+            { name: 'Disco del CT (SSD)', path: '/', mounted: true, total: 40e9, used: 6.2e9, percent: 15.5 },
             { name: 'Disco externo', path: '/mnt/externo', mounted: true, total: 1e12, used: 212e9, percent: 21.2 },
         ],
         services: { ssh: 'active', apache2: 'active', minecraft: 'active', fail2ban: 'active', 'panel-status': 'active', 'minecraft-backup.timer': 'active' },

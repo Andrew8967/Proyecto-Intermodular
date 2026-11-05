@@ -1,4 +1,4 @@
-# Servidor Personal en Mini PC x86 — Proyecto Intermodular
+# Servidor Personal en Mini PC x86 con Proxmox VE — Proyecto Intermodular
 
 **Alumno:** Andrés David Olarte Molina  
 **Curso:** 2º SMR — I.E.S. Ribera del Tajo  
@@ -9,14 +9,24 @@
 
 ## Descripción
 
-Servidor personal de bajo coste (**~150 €**) basado en un **mini PC x86_64 con 16 GB de RAM**. Funciona 24 horas al día en la red local (LAN) y aloja:
+Servidor personal de bajo coste (**~150 €**) basado en un **mini PC x86_64 con 16 GB de RAM** y **Proxmox VE 9** como sistema base. Funciona 24 horas al día en la red local (LAN). Cada proyecto va en su propio contenedor, aislado:
+
+```
+Mini PC — Proxmox VE 9 (192.168.1.10:8006)
+├── CT 101 mc-server (Debian 13, LXC) · 192.168.1.100 → Minecraft + panel  [Andrés]
+├── CT/VM 2xx · 192.168.1.110+                        → homelab           [Alberto]
+└── Disco externo 1-2 TB                              → copias + datos
+```
+
+Servicios:
 
 | Servicio | Software | Puerto | Estado |
 |---|---|---|---|
 | 🎮 **Servidor de Minecraft** (principal) | PaperMC (Java Edition) + Java 21 | 25565 | Script listo · pendiente de probar en la VM |
 | 📊 **Panel de monitorización** | Apache2 + HTML/CSS/JS + recolector en Python | 80 | Funcional con datos de ejemplo · pendiente en la VM |
-| 💾 **Copias de seguridad** | tar + temporizador systemd → disco externo | — | Script listo |
-| 🖧 **Homelab de Alberto** | Proxmox VE (VM/LXC) o usuario propio | — | Pendiente de hardware |
+| 💾 **Copias de seguridad** | Mundo cada noche (tar) + CT entero cada semana (vzdump) → disco externo | — | Scripts listos |
+| 🖥️ **Virtualización** | Proxmox VE 9: CT LXC sin privilegios, snapshots, vzdump | 8006 | Scripts listos · pendiente de probar |
+| 🖧 **Homelab de Alberto** | Su propio CT/VM en el mismo Proxmox | — | Pendiente de hardware |
 | 🤖 Chatbot de IA local *(extra opcional)* | Ollama + Open WebUI | 3000 | Opcional |
 
 El panel muestra **en tiempo real**: jugadores conectados (con sus nombres), TPS, MSPT, ping, estado del servidor con historial de caídas, CPU, RAM, temperatura y espacio en disco.
@@ -31,7 +41,7 @@ La primera versión usaba una Raspberry Pi 5 ([documentación v1](docs/archivo/d
 
 - **La simulación es idéntica al servidor real.** El portátil y el mini PC son x86_64, así que la VM de pruebas usa los mismos paquetes y los mismos scripts. ARM solo se puede emular, y va muy lento.
 - **Más potencia por núcleo y el doble de RAM** (16 GB), sin comprar accesorios aparte.
-- **Permite virtualizar** (Proxmox) para compartir el equipo con Alberto sin que un proyecto afecte al otro.
+- **Proxmox VE** (solo existe oficialmente para x86_64): compartimos el equipo con Alberto sin que un proyecto afecte al otro, con snapshots y copias completas.
 - **Más barato:** ~150 € todo incluido, frente a ~207-300 € de la Pi 5 con accesorios.
 
 Detalles y checklist de compra: [docs/01-hardware.md](docs/01-hardware.md).
@@ -65,19 +75,24 @@ Una web estática no puede leer el estado del sistema por sí sola. El recolecto
 
 ## Instalación rápida
 
-En Debian 13 (en la VM o en el mini PC):
+1. Instalar **Proxmox VE 9** en el mini PC (IP `192.168.1.10`).
+2. En la consola del Proxmox, como root:
 
 ```bash
+apt update && apt install -y git
 git clone https://github.com/Andrew8967/Proyecto-Intermodular.git
 cd Proyecto-Intermodular
-nano scripts/config.env                  # IP, red, usuario, versión de Minecraft...
+nano proxmox/proxmox.env                       # IPs, recursos del CT, tu usuario
 
-sudo bash scripts/01-setup-base.sh       # actualizaciones, SSH, UFW, fail2ban
-sudo bash scripts/02-install-papermc.sh  # Java + PaperMC como servicio systemd
-sudo bash scripts/03-install-panel.sh    # Apache2 + panel + recolector
-sudo bash scripts/04-setup-backups.sh    # copia diaria al disco externo
-bash scripts/estado-servicios.sh         # comprobar
+bash proxmox/01-postinstall.sh                 # repositorios gratuitos + actualización
+#   (montar el disco externo en /mnt/externo: docs/04-instalacion.md, paso 3)
+bash proxmox/02-crear-ct-minecraft.sh --todo   # crea el CT 101 e instala todo dentro
+bash proxmox/03-backups-proxmox.sh             # copia semanal del CT con vzdump
 ```
+
+3. Panel en `http://192.168.1.100` · Minecraft en `192.168.1.100:25565`.
+
+Dentro del CT, `--todo` ejecuta `scripts/01` (seguridad) → `02` (PaperMC) → `03` (panel) → `04` (copias). También se pueden lanzar a mano, uno a uno.
 
 Guía completa: [docs/04-instalacion.md](docs/04-instalacion.md).
 
@@ -88,10 +103,10 @@ Guía completa: [docs/04-instalacion.md](docs/04-instalacion.md).
 | Documento | Contenido |
 |---|---|
 | [01 · Hardware](docs/01-hardware.md) | Cambio desde la Raspberry Pi, requisitos, checklist de compra, presupuesto, BIOS |
-| [02 · Arquitectura](docs/02-arquitectura.md) | Esquema de red, puertos, Proxmox frente a Debian directo, reparto con Alberto |
-| [03 · Simulación](docs/03-simulacion.md) | VM en VirtualBox o QEMU (con aceleración), redirección de puertos |
-| [04 · Instalación](docs/04-instalacion.md) | Debian 13, IP fija, scripts, whitelist, disco externo, problemas típicos |
-| [05 · Seguridad](docs/05-seguridad.md) | UFW, SSH con clave, fail2ban, Tailscale, copias y restauración |
+| [02 · Arquitectura](docs/02-arquitectura.md) | Esquema de red, Proxmox y CT 101, por qué LXC, puertos, reparto con Alberto |
+| [03 · Simulación](docs/03-simulacion.md) | Prueba A (servicios en VM Debian 13) y prueba B (Proxmox en VirtualBox) |
+| [04 · Instalación](docs/04-instalacion.md) | BIOS, Proxmox, disco externo, CT 101, vzdump, usuarios de Alberto, problemas típicos |
+| [05 · Seguridad](docs/05-seguridad.md) | UFW y firewall de Proxmox, SSH, fail2ban, Tailscale, copias, vzdump, snapshots |
 | [06 · Planificación](docs/06-planificacion.md) | Fases, estado, plan de pruebas, módulos y ODS |
 
 ---
@@ -103,9 +118,11 @@ Guía completa: [docs/04-instalacion.md](docs/04-instalacion.md).
 - [x] Primera versión del panel web desplegada en la VM
 - [x] Scripts v2: seguridad base, PaperMC, panel en vivo, copias de seguridad
 - [x] Panel con datos reales (`status.json`) y modo demo
-- [ ] Probar los scripts v2 en la VM de Debian 13
+- [x] Proxmox VE como base: scripts de postinstalación, CT 101 y vzdump
+- [ ] Prueba A: scripts de servicios en una VM Debian 13
+- [ ] Prueba B: Proxmox en VirtualBox creando el CT 101
 - [ ] Comprar el mini PC (~150 €)
-- [ ] Desplegar en el hardware real y montar el homelab de Alberto
+- [ ] Instalar Proxmox en el mini PC, desplegar el CT 101 y el homelab de Alberto
 - [ ] Pruebas de rendimiento y seguridad, memoria final
 
 ---
@@ -118,8 +135,8 @@ Guía completa: [docs/04-instalacion.md](docs/04-instalacion.md).
 | Redes de Área Local | LAN, IP fija o reserva DHCP, puertos, modelo OSI |
 | Montaje y Mantenimiento de Equipos | Elección del mini PC, BIOS, discos, consumo |
 | Aplicaciones Web | Panel HTML5/CSS3/JS con `fetch()` y JSON |
-| Sistemas Operativos en Red | Servidor Linux en red, servicios systemd, Proxmox |
-| Seguridad Informática | UFW, SSH con clave, fail2ban, mínimo privilegio, copias |
+| Sistemas Operativos en Red | Proxmox VE: contenedores LXC, recursos, usuarios y permisos, snapshots |
+| Seguridad Informática | UFW y firewall de Proxmox, CT sin privilegios, SSH con clave, fail2ban, copias |
 | Servicios en Red | Apache2, PaperMC, RCON, gestión de puertos |
 
 ---
@@ -131,12 +148,17 @@ Guía completa: [docs/04-instalacion.md](docs/04-instalacion.md).
 ├── docs/                         documentación del proyecto
 │   ├── 01-hardware.md … 06-planificacion.md
 │   └── archivo/                  versión 1 (Raspberry Pi 5), como histórico
+├── proxmox/                      se ejecuta en el HOST Proxmox (como root)
+│   ├── proxmox.env               configuración del host y del CT 101
+│   ├── 01-postinstall.sh         repositorios gratuitos + actualización
+│   ├── 02-crear-ct-minecraft.sh  crea el CT 101 (--todo instala todo dentro)
+│   └── 03-backups-proxmox.sh     copia semanal del CT con vzdump
 ├── panel-web/                    panel de monitorización (Apache2)
 │   ├── index.html
 │   ├── style.css
 │   └── script.js
-└── scripts/
-    ├── config.env                configuración común (editar primero)
+└── scripts/                      se ejecuta DENTRO del CT 101 (Debian 13)
+    ├── config.env                configuración de los servicios
     ├── lib.sh                    funciones compartidas
     ├── 01-setup-base.sh          sistema, SSH, UFW, fail2ban
     ├── 02-install-papermc.sh     servidor de Minecraft
@@ -149,4 +171,4 @@ Guía completa: [docs/04-instalacion.md](docs/04-instalacion.md).
 
 ---
 
-> Proyecto en desarrollo activo. Los scripts v2 están escritos para Debian 13 x86_64 y se probarán primero en la VM y después en el mini PC.
+> Proyecto en desarrollo activo. Los scripts están escritos para Proxmox VE 9 y Debian 13 (x86_64). Se probarán primero en VirtualBox y después en el mini PC. La optimización de recursos queda para una fase posterior.
