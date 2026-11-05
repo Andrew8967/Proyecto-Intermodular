@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Servidor — Proyecto Intermodular</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- fuentes de google (si el servidor no tiene internet, se usan las del sistema) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- capas de efectos visuales de fondo -->
+    <div class="scanlines"></div>
+    <div class="noise"></div>
+
+    <!-- cabecera: nombre, estado de la conexión y uptime REAL del servidor -->
+    <header>
+        <div class="logo">
+            <span class="logo-icon">⬡</span>
+            <div>
+                <h1>Servidor Intermodular</h1>
+                <p class="subtitle">Mini PC x86 · Debian 13 · Red local</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <span id="conn-badge" class="conn-badge conn-wait">CONECTANDO…</span>
+            <span class="uptime-label">UPTIME DEL SERVIDOR</span>
+            <span id="uptime" class="uptime-value">--</span>
+            <span id="updated" class="updated">esperando datos</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- ================= MINECRAFT (servicio principal) ================= -->
+        <section>
+            <h2 class="section-title">Minecraft — servicio principal</h2>
+            <div class="mc-card">
+                <div class="service-header">
+                    <div>
+                        <h3>PaperMC <span id="mc-version" class="service-tech">--</span></h3>
+                        <span id="mc-motd" class="mc-motd">--</span>
+                    </div>
+                    <span class="status-badge" id="mc-status">--</span>
+                </div>
+
+                <div class="stat-row">
+                    <div class="stat">
+                        <span class="stat-label">Jugadores</span>
+                        <span class="stat-value" id="mc-players">--</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">TPS <small>(20 = perfecto)</small></span>
+                        <span class="stat-value" id="mc-tps">--</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">MSPT <small>(ms por tick)</small></span>
+                        <span class="stat-value" id="mc-mspt">--</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Ping</span>
+                        <span class="stat-value" id="mc-ping">--</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Tamaño del mundo</span>
+                        <span class="stat-value" id="mc-world">--</span>
+                    </div>
+                </div>
+
+                <div class="mc-bottom">
+                    <div>
+                        <span class="connect-label">Conectados ahora</span>
+                        <div id="mc-player-list" class="chips"><span class="chip chip-empty">nadie</span></div>
+                    </div>
+                    <div>
+                        <span class="connect-label">TPS — últimos 15 minutos</span>
+                        <svg id="spark-tps" class="spark" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+                    </div>
+                </div>
+
+                <div class="connect-info">
+                    <span class="connect-label">Conectar en Minecraft (Multijugador → Añadir servidor):</span>
+                    <code class="connect-addr" id="mc-address">--</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SISTEMA ================= -->
+        <section>
+            <h2 class="section-title">Sistema</h2>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <span class="hw-label">CPU</span>
+                    <span class="metric-value" id="cpu-value">--</span>
+                    <div class="bar"><div class="bar-fill" id="cpu-bar"></div></div>
+                    <svg id="spark-cpu" class="spark" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+                    <span class="metric-sub" id="cpu-load">carga: --</span>
+                </div>
+                <div class="metric">
+                    <span class="hw-label">Memoria RAM</span>
+                    <span class="metric-value" id="ram-value">--</span>
+                    <div class="bar"><div class="bar-fill" id="ram-bar"></div></div>
+                    <svg id="spark-ram" class="spark" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+                    <span class="metric-sub" id="ram-sub">--</span>
+                </div>
+                <div class="metric">
+                    <span class="hw-label">Temperatura CPU</span>
+                    <span class="metric-value" id="temp-value">--</span>
+                    <div class="bar"><div class="bar-fill" id="temp-bar"></div></div>
+                    <span class="metric-sub" id="temp-sub">--</span>
+                </div>
+            </div>
+
+            <h3 class="sub-title">Almacenamiento</h3>
+            <div id="disks" class="disks"></div>
+        </section>
+
+        <!-- ================= SERVICIOS + EVENTOS ================= -->
+        <section class="two-cols">
+            <div>
+                <h2 class="section-title">Servicios</h2>
+                <ul id="services" class="services-list"></ul>
+            </div>
+            <div>
+                <h2 class="section-title">Historial de eventos</h2>
+                <ul id="events" class="events-list"><li class="event-empty">sin eventos todavía</li></ul>
+            </div>
+        </section>
+
+        <!-- ================= HARDWARE ================= -->
+        <section>
+            <h2 class="section-title">Hardware y sistema operativo</h2>
+            <div class="hw-grid">
+                <div class="hw-item"><span class="hw-label">Equipo</span><span class="hw-value" id="hw-host">--</span></div>
+                <div class="hw-item"><span class="hw-label">CPU</span><span class="hw-value" id="hw-cpu">--</span></div>
+                <div class="hw-item"><span class="hw-label">RAM total</span><span class="hw-value" id="hw-ram">--</span></div>
+                <div class="hw-item"><span class="hw-label">Sistema operativo</span><span class="hw-value" id="hw-os">--</span></div>
+                <div class="hw-item"><span class="hw-label">Kernel / arquitectura</span><span class="hw-value" id="hw-kernel">--</span></div>
+                <div class="hw-item"><span class="hw-label">Virtualización</span><span class="hw-value" id="hw-virt">--</span></div>
+            </div>
+        </section>
+
+        <!-- ================= RED ================= -->
+        <section>
+            <h2 class="section-title">Red</h2>
+            <div class="network-grid">
+                <div class="net-item"><span class="net-label">IP del servidor</span><code id="net-ip">--</code></div>
+                <div class="net-item"><span class="net-label">Subred</span><code id="net-subnet">--</code></div>
+                <div class="net-item"><span class="net-label">Puerta de enlace</span><code id="net-gw">--</code></div>
+                <div class="net-item"><span class="net-label">Firewall</span><code>UFW — solo LAN</code></div>
+                <div class="net-item"><span class="net-label">Acceso remoto</span><code>SSH con clave · fail2ban</code></div>
+                <div class="net-item"><span class="net-label">Acceso desde Internet</span><code>Cerrado (sin abrir puertos)</code></div>
+            </div>
+        </section>
+
+        <footer class="project-footer">
+            <p>Proyecto Intermodular — 2º SMR — I.E.S. Ribera del Tajo — 2026/2027</p>
+            <p>Andrés David Olarte Molina · homelab compartido con Alberto</p>
+            <p class="footer-hint">Los datos se actualizan solos cada pocos segundos. Abre <code>?demo</code> para ver datos de ejemplo.</p>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
